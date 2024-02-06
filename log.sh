@@ -82,7 +82,7 @@ cleanup_specific_log() {
 # 函数: 清理所有日志文件，包括轮转的和压缩的
 cleanup_all_logs() {
     echo "正在清理所有日志文件，包括没有后缀的、归档的和压缩的..."
-    find /var/log -type f \( -name "*.log" -o -name "syslog*" -o -name "btmp*" -o -name "*.log.*" -o -name "*.gz" \) -exec rm -f {} \;
+    find /var/log -type f \( -name "*.log" -o -name "syslog" -o -name "btmp" -o -name "*.log.*" -o -name "*.gz" \) -exec rm -f {} \;
     echo "所有日志文件的清理尝试完成。"
 }
 
@@ -93,43 +93,56 @@ cleanup_junk() {
     echo "系统垃圾和临时文件清理完成。"
 }
 
+# 函数: 清理用户的命令历史
+cleanup_user_history() {
+    echo "正在清理用户命令历史..."
+    history -c && history -w
+    echo "用户命令历史已清理。"
+}
+
 # 函数: 清理包管理器缓存
 cleanup_package_cache() {
     echo "清理包管理器缓存..."
-    if [ -n "$(command -v apt-get)" ]; then
+    if type apt-get >/dev/null 2>&1; then
         apt-get clean
         apt-get autoclean
-    elif [ -n "$(command -v yum)" ]; then
+    elif type yum >/dev/null 2>&1; then
         yum clean all
+    elif type zypper >/dev/null 2>&1; then
+        zypper clean
+    elif type pacman >/dev/null 2>&1; then
+        pacman -Sc
     else
-        echo "不支持的包管理器。"
+        echo "未发现已知的包管理器。"
     fi
     echo "包管理器缓存已清理。"
 }
-
-# 函数: 检测操作系统类型并设置包管理器变量
-detect_os_and_cleanup() {
-    if [ -n "$(command -v apt-get)" ]; then
-        cleanup_package_cache "apt"
-    elif [ -n "$(command -v yum)" ]; then
-        cleanup_package_cache "yum"
-    else
-        echo "无法确定包管理器，清理缓存跳过。"
-    fi
-}
 # 主程序逻辑
-detect_os_and_cleanup
+detect_os() {
+    if type apt-get >/dev/null 2>&1; then
+        PKG_MANAGER="apt"
+    elif type yum >/dev/null 2>&1; then
+        PKG_MANAGER="yum"
+    elif type zypper >/dev/null 2>&1; then
+        PKG_MANAGER="zypper"
+    elif type pacman >/dev/null 2>&1; then
+        PKG_MANAGER="pacman"
+    else
+        echo "不支持的包管理器。"
+        return 1
+    fi
+    echo "已检测到包管理器: $PKG_MANAGER"
+}
 
-while true; do
-    echo "请选择要执行的操作："
+main_menu() {
+    echo "请选择要执行的清理任务："
     echo "1) 清理特定日志文件"
     echo "2) 清理所有日志文件"
     echo "3) 清理系统垃圾和临时文件"
-    echo "4) 清理包管理器缓存"
-    echo "5) 退出程序"
-
-    read -p "请输入选项 (1-5): " choice
-
+    echo "4) 清理用户命令历史"
+    echo "5) 清理包管理器缓存"
+    echo "6) 退出程序"
+    read -p "请输入选项 (1-6): " choice
     case "$choice" in
         1)
             cleanup_specific_log
@@ -141,14 +154,24 @@ while true; do
             cleanup_junk
             ;;
         4)
-            detect_os_and_cleanup
+            cleanup_user_history
             ;;
         5)
+            cleanup_package_cache
+            ;;
+        6)
             echo "退出程序。"
-            exit 0
+            break
             ;;
         *)
-            echo "无效的选项，请重新输入。"
+            echo "无效选项，请重新输入。"
             ;;
     esac
+}
+
+# 初始化脚本
+detect_os
+# 显示主菜单，直到用户选择退出
+while true; do
+    main_menu
 done
