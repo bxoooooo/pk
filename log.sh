@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 高级可视化清理脚本
+# 高级清理脚本
 
 # 函数：确认文件是否真的被清理
 confirm_cleanup() {
@@ -12,14 +12,14 @@ confirm_cleanup() {
     fi
 }
 
-# 函数: 清理日志文件
+# 函数: 清理日志文件至空文件
 cleanup_log_file() {
     log_file=$1
     log_name=$2
-    echo "清理 ${log_name}..."
+    echo "正在清理 ${log_name}..."
     cat /dev/null > "${log_file}"
     if [ $? -eq 0 ]; then
-        echo "${log_name} 已清理。"
+        echo "${log_name} 清理完成。"
     else
         echo "${log_name} 清理失败。"
     fi
@@ -64,7 +64,8 @@ cleanup_specific_log() {
         "内核日志"
         "用户级日志"
     )
-        for i in "${!options[@]}"; do
+
+    for i in "${!options[@]}"; do
         echo "$((i+1))) 清理 ${names[i]}"
     done
 
@@ -80,8 +81,8 @@ cleanup_specific_log() {
 }
 # 函数: 清理所有日志文件，包括轮转的和压缩的
 cleanup_all_logs() {
-    echo "正在清理所有日志文件，包括归档的和压缩的..."
-    find /var/log -type f \( -name "*.log" -o -name "*.log.*" -o -name "*.gz" \) -exec rm -f {} \;
+    echo "正在清理所有日志文件，包括没有后缀的、归档的和压缩的..."
+    find /var/log -type f \( -name "*.log" -o -name "syslog*" -o -name "btmp*" -o -name "*.log.*" -o -name "*.gz" \) -exec rm -f {} \;
     echo "所有日志文件的清理尝试完成。"
 }
 
@@ -95,63 +96,59 @@ cleanup_junk() {
 # 函数: 清理包管理器缓存
 cleanup_package_cache() {
     echo "清理包管理器缓存..."
-    if [ "$PKG_MANAGER" = "apt" ]; then
+    if [ -n "$(command -v apt-get)" ]; then
         apt-get clean
         apt-get autoclean
-    elif [ "$PKG_MANAGER" = "yum" ]; then
+    elif [ -n "$(command -v yum)" ]; then
         yum clean all
+    else
+        echo "不支持的包管理器。"
     fi
     echo "包管理器缓存已清理。"
 }
+
 # 函数: 检测操作系统类型并设置包管理器变量
-detect_os() {
-    if [ -f /etc/os-release ]; then
-        . /etc/os-release
-        if [ "$ID" = "debian" ] || [ "$ID_LIKE" = "debian" ]; then
-            PKG_MANAGER="apt"
-        elif [ "$ID" = "centos" ] || [ "$ID" = "fedora" ] || [ "$ID_LIKE" = "rhel" ]; then
-            PKG_MANAGER="yum"
-        else
-            echo "不支持的操作系统。"
-            exit 1
-        fi
+detect_os_and_cleanup() {
+    if [ -n "$(command -v apt-get)" ]; then
+        cleanup_package_cache "apt"
+    elif [ -n "$(command -v yum)" ]; then
+        cleanup_package_cache "yum"
     else
-        echo "无法检测到操作系统类型。"
-        exit 1
+        echo "无法确定包管理器，清理缓存跳过。"
     fi
 }
 # 主程序逻辑
+detect_os_and_cleanup
 
-detect_os
+while true; do
+    echo "请选择要执行的操作："
+    echo "1) 清理特定日志文件"
+    echo "2) 清理所有日志文件"
+    echo "3) 清理系统垃圾和临时文件"
+    echo "4) 清理包管理器缓存"
+    echo "5) 退出程序"
 
-echo "请选择要执行的清理任务："
-echo "1) 清理特定日志文件"
-echo "2) 清理所有日志文件"
-echo "3) 清理系统垃圾和临时文件"
-echo "4) 清理包管理器缓存"
-echo "5) 退出"
+    read -p "请输入选项 (1-5): " choice
 
-read -p "请输入选择 (1-5): " choice
-
-case "$choice" in
-    1)
-        cleanup_specific_log
-        ;;
-    2)
-        cleanup_all_logs
-        ;;
-    3)
-        cleanup_junk
-        ;;
-    4)
-        cleanup_package_cache
-        ;;
-    5)
-        echo "退出程序。"
-        ;;
-    *)
-        echo "无效选项。"
-        ;;
-esac
-
-echo "操作完成。"
+    case "$choice" in
+        1)
+            cleanup_specific_log
+            ;;
+        2)
+            cleanup_all_logs
+            ;;
+        3)
+            cleanup_junk
+            ;;
+        4)
+            detect_os_and_cleanup
+            ;;
+        5)
+            echo "退出程序。"
+            exit 0
+            ;;
+        *)
+            echo "无效的选项，请重新输入。"
+            ;;
+    esac
+done
