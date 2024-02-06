@@ -1,30 +1,5 @@
 #!/bin/bash
 
-display_history() {
-    echo "用户的历史命令："
-    history
-}
-
-display_lastlog() {
-    echo "最后一次登录信息："
-    sudo lastlog
-}
-
-display_last() {
-    echo "上次系统启动后的登录尝试："
-    last
-}
-
-display_lastb() {
-    echo "上次系统启动后的失败的登录尝试："
-    lastb
-}
-
-display_who() {
-    echo "当前登录的用户信息："
-    who
-}
-
 cleanup_history() {
     echo "正在清理用户历史命令记录..."
     cat /dev/null > ~/.bash_history && history -c && history -w
@@ -140,59 +115,6 @@ cleanup_package_cache() {
     echo "包管理器缓存已清理。"
 }
 
-display_specific_log() {
-    echo "请选择要显示的日志文件："
-    local options=(
-        "/var/log/syslog"
-        "/var/log/cron"
-        "/var/log/wtmp"
-        "/var/log/btmp"
-        "/var/log/dmesg"
-        "/var/log/secure"
-        "/var/log/messages"
-        "/var/log/lastlog"
-        "/var/log/maillog"
-        "/var/log/yum.log"
-        "/var/log/auth.log"
-        "/var/log/boot.log"
-        "/var/log/daemon.log"
-        "/var/log/dpkg.log"
-        "/var/log/kern.log"
-        "/var/log/user.log"
-    )
-    local names=(
-        "系统日志"
-        "定时任务日志"
-        "登录成功日志"
-        "登录失败日志"
-        "系统启动消息日志"
-        "安全相关日志"
-        "系统消息日志"
-        "用户最后登录日志"
-        "邮件日志"
-        "YUM 包管理器日志"
-        "认证日志"
-        "启动日志"
-        "守护进程日志"
-        "DPKG包管理器日志"
-        "内核日志"
-        "用户级日志"
-    )
-    for i in "${!options[@]}"; do
-        echo "$((i+1)). 显示 ${names[i]}"
-    done
-    read -p "请输入要显示的日志文件编号（或输入 'q' 退出）: " input
-    if [[ "$input" =~ ^[0-9]+$ ]] && [ "$input" -ge 1 ] && [ "$input" -le "${#options[@]}" ]; then
-        clear
-        local index=$((input-1))
-        cat "${options[$index]}"
-    elif [ "$input" == 'q' ]; then
-        echo "退出显示操作。"
-    else
-        echo "无效输入，请再试一次。"
-    fi
-}
-
 detect_os() {
     if type apt-get >/dev/null 2>&1; then
         PKG_MANAGER="apt"
@@ -217,16 +139,10 @@ main_menu() {
         echo "3) 清理系统垃圾和临时文件"
         echo "4) 清理用户命令历史（新方法）"
         echo "5) 清理包管理器缓存"
-        echo "6) 显示特定日志文件"
-        echo "7) 显示用户历史命令"
-        echo "8) 显示最后一次登录信息"
-        echo "9) 显示上次系统启动后的登录尝试"
-        echo "10) 显示上次系统启动后的失败的登录尝试"
-        echo "11) 显示当前登录的用户信息"
-        echo "12) 清理用户命令历史（原方法）"
-        echo "13) 删除这个脚本"
-        echo "14) 退出程序"
-        read -p "请输入选项 (1-14): " choice
+        echo "6) 清理用户命令历史（旧方法）"
+        echo "7) 删除这个脚本"
+        echo "8) 退出程序"
+        read -p "请输入选项 (1-8): " choice
         case "$choice" in
             1)
                 cleanup_specific_log
@@ -244,30 +160,12 @@ main_menu() {
     cleanup_package_cache
     ;;
 6)
-    display_specific_log
-    ;;
-7)
-    display_history
-    ;;
-8)
-    display_lastlog
-    ;;
-9)
-    display_last
-    ;;
-10)
-    display_lastb
-    ;;
-11)
-    display_who
-    ;;
-12)
     cleanup_user_history_old
     ;;
-13)
+7)
     rm -- "$0"
     ;;
-14)
+8)
     exit
     ;;
 *)
