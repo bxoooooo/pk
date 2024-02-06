@@ -241,3 +241,42 @@ main_menu() {
                 cleanup_history
                 ;;
             5)
+    cleanup_package_cache
+    ;;
+6)
+    display_specific_log
+    ;;
+7)
+    display_history
+    ;;
+8)
+    display_lastlog
+    ;;
+9)
+    display_last
+    ;;
+10)
+    display_lastb
+    ;;
+11)
+    display_who
+    ;;
+12)
+    cleanup_user_history_old
+    ;;
+13)
+    rm -- "$0"
+    ;;
+14)
+    exit
+    ;;
+*)
+    echo "无效的选项，请再试一次。"
+    ;;
+esac
+done
+}
+
+echo "欢迎使用脚本工具一体机!"
+detect_os
+main_menu
