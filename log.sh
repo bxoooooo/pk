@@ -154,7 +154,7 @@ display_specific_log() {
     if [[ "$input" =~ ^[0-9]+$ ]] && [ "$input" -ge 1 ] && [ "$input" -le "${#options[@]}" ]; then
         clear
         local index=$((input-1))
-        tail -f "${options[$index]}"
+        cat "${options[$index]}"
     elif [ "$input" == 'q' ]; then
         echo "退出显示操作。"
     else
