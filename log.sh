@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# 高级清理脚本
-
-# 函数：确认文件是否真的被清理
 confirm_cleanup() {
     local log_file=$1
     if [ ! -s "$log_file" ]; then
@@ -12,7 +9,6 @@ confirm_cleanup() {
     fi
 }
 
-# 函数: 清理日志文件至空文件
 cleanup_log_file() {
     local log_file=$1
     local log_name=$2
@@ -25,7 +21,7 @@ cleanup_log_file() {
     fi
     confirm_cleanup "${log_file}"
 }
-# 函数: 清理特定的日志文件
+
 cleanup_specific_log() {
     echo "请选择要清理的日志文件："
     local options=(
@@ -69,28 +65,33 @@ cleanup_specific_log() {
     done
     read -p "请输入要清理的日志文件编号（或输入 'q' 退出）: " input
     if [[ "$input" =~ ^[0-9]+$ ]] && [ "$input" -ge 1 ] && [ "$input" -le "${#options[@]}" ]; then
-        local index=$((input
-        # 函数: 清理所有日志文件，包括轮转的和压缩的
+        local index=$((input-1))
+        cleanup_log_file "${options[$index]}" "${names[$index]}"
+    elif [ "$input" == 'q' ]; then
+        echo "退出清理操作。"
+    else
+        echo "无效输入，请再试一次。"
+    fi
+}
+
 cleanup_all_logs() {
     echo "正在清理所有日志文件，包括没有后缀的、归档的和压缩的..."
     find /var/log -type f \( -name "*.log" -o -name "syslog" -o -name "btmp" -o -name "*.log.*" -o -name "*.gz" \) -exec rm -f {} \;
     echo "所有日志文件的清理尝试完成。"
 }
 
-# 函数: 清理系统垃圾和临时文件
 cleanup_junk() {
     echo "清理系统垃圾和临时文件..."
     rm -rf /tmp/* /var/tmp/*
     echo "系统垃圾和临时文件清理完成。"
 }
 
-# 函数: 清理用户的命令历史
 cleanup_user_history() {
     echo "正在清理用户命令历史..."
     history -c && history -w
     echo "用户命令历史已清理。"
 }
-# 函数: 清理包管理器缓存
+
 cleanup_package_cache() {
     echo "清理包管理器缓存..."
     if type apt-get >/dev/null 2>&1; then
@@ -108,7 +109,6 @@ cleanup_package_cache() {
     echo "包管理器缓存已清理。"
 }
 
-# 函数: 显示特定的日志文件
 display_specific_log() {
     echo "请选择要显示的日志文件："
     local options=(
@@ -150,7 +150,6 @@ display_specific_log() {
     for i in "${!options[@]}"; do
         echo "$((i+1)). 显示 ${names[i]}"
     done
-
     read -p "请输入要显示的日志文件编号（或输入 'q' 退出）: " input
     if [[ "$input" =~ ^[0-9]+$ ]] && [ "$input" -ge 1 ] && [ "$input" -le "${#options[@]}" ]; then
         clear
@@ -162,7 +161,7 @@ display_specific_log() {
         echo "无效输入，请再试一次。"
     fi
 }
-# 主程序逻辑
+
 detect_os() {
     if type apt-get >/dev/null 2>&1; then
         PKG_MANAGER="apt"
@@ -192,15 +191,33 @@ main_menu() {
         echo "8) 退出程序"
         read -p "请输入选项 (1-8): " choice
         case "$choice" in
-            1) cleanup_specific_log;;
-            2) cleanup_all_logs;;
-            3) cleanup_junk;;
-            4) cleanup_user_history;;
-            5) cleanup_package_cache;;
-            6) display_specific_log;;
-            7) rm -- "$0"; exit;;
-            8) echo "退出程序。"; break;;
-            *) echo "无效选项，请重新输入。";;
+            1)
+                cleanup_specific_log
+                ;;
+            2)
+                cleanup_all_logs
+                ;;
+            3)
+                cleanup_junk
+                ;;
+            4)
+                cleanup_user_history
+                ;;
+            5)
+                cleanup_package_cache
+                ;;
+            6)
+                display_specific_log
+                ;;
+            7)
+                rm -- "$0"; exit
+                ;;
+            8)
+                echo "退出程序。"; break
+                ;;
+            *)
+                echo "无效选项，请重新输入。"
+                ;;
         esac
     done
 }
