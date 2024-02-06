@@ -65,24 +65,16 @@ cleanup_specific_log() {
         "用户级日志"
     )
     for i in "${!options[@]}"; do
-        echo "$((i+1))) 清理 ${names[i]}"
+        echo "$((i+1)). 清理 ${names[i]}"
     done
-
     read -p "请输入要清理的日志文件编号（或输入 'q' 退出）: " input
     if [[ "$input" =~ ^[0-9]+$ ]] && [ "$input" -ge 1 ] && [ "$input" -le "${#options[@]}" ]; then
-        local index=$((input-1))
-        cleanup_log_file "${options[$index]}" "${names[$index]}"
-    elif [ "$input" == 'q' ]; then
-        echo "退出清理操作。"
-    else
-        echo "无效输入，请再试一次。"
-    fi
-}
-# 函数: 清理所有日志文件，包括轮转的和压缩的
+        local index=$((input
+        # 函数: 清理所有日志文件，包括轮转的和压缩的
 cleanup_all_logs() {
     echo "正在清理所有日志文件，包括没有后缀的、归档的和压缩的..."
     find /var/log -type f \( -name "*.log" -o -name "syslog" -o -name "btmp" -o -name "*.log.*" -o -name "*.gz" \) -exec rm -f {} \;
-    echo "所有日志文件的清理尝试完成。
+    echo "所有日志文件的清理尝试完成。"
 }
 
 # 函数: 清理系统垃圾和临时文件
@@ -156,7 +148,7 @@ display_specific_log() {
         "用户级日志"
     )
     for i in "${!options[@]}"; do
-        echo "$((i+1))) 显示 ${names[i]}"
+        echo "$((i+1)). 显示 ${names[i]}"
     done
 
     read -p "请输入要显示的日志文件编号（或输入 'q' 退出）: " input
