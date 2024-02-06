@@ -1,5 +1,36 @@
 #!/bin/bash
 
+display_history() {
+    echo "用户的历史命令："
+    history
+}
+
+display_lastlog() {
+    echo "最后一次登录信息："
+    sudo lastlog
+}
+
+display_last() {
+    echo "上次系统启动后的登录尝试："
+    last
+}
+
+display_lastb() {
+    echo "上次系统启动后的失败的登录尝试："
+    lastb
+}
+
+display_who() {
+    echo "当前登录的用户信息："
+    who
+}
+
+cleanup_history() {
+    echo "正在清理用户历史命令记录..."
+    cat /dev/null > ~/.bash_history && history -c && history -w
+    echo "用户历史命令记录已清理。"
+}
+
 confirm_cleanup() {
     local log_file=$1
     if [ ! -s "$log_file" ]; then
@@ -86,10 +117,10 @@ cleanup_junk() {
     echo "系统垃圾和临时文件清理完成。"
 }
 
-cleanup_user_history() {
-    echo "正在清理用户命令历史..."
+cleanup_user_history_old() {
+    echo "（旧方法）正在清理用户命令历史..."
     history -c && history -w
-    echo "用户命令历史已清理。"
+    echo "（旧方法）用户命令历史已清理。"
 }
 
 cleanup_package_cache() {
@@ -180,16 +211,22 @@ detect_os() {
 
 main_menu() {
     while true; do
-        echo "请选择要执行的清理任务："
+        echo "请选择要执行的任务："
         echo "1) 清理特定日志文件"
         echo "2) 清理所有日志文件"
         echo "3) 清理系统垃圾和临时文件"
-        echo "4) 清理用户命令历史"
+        echo "4) 清理用户命令历史（新方法）"
         echo "5) 清理包管理器缓存"
         echo "6) 显示特定日志文件"
-        echo "7) 删除这个脚本"
-        echo "8) 退出程序"
-        read -p "请输入选项 (1-8): " choice
+        echo "7) 显示用户历史命令"
+        echo "8) 显示最后一次登录信息"
+        echo "9) 显示上次系统启动后的登录尝试"
+        echo "10) 显示上次系统启动后的失败的登录尝试"
+        echo "11) 显示当前登录的用户信息"
+        echo "12) 清理用户命令历史（原方法）"
+        echo "13) 删除这个脚本"
+        echo "14) 退出程序"
+        read -p "请输入选项 (1-14): " choice
         case "$choice" in
             1)
                 cleanup_specific_log
@@ -201,28 +238,6 @@ main_menu() {
                 cleanup_junk
                 ;;
             4)
-                cleanup_user_history
+                cleanup_history
                 ;;
             5)
-                cleanup_package_cache
-                ;;
-            6)
-                display_specific_log
-                ;;
-            7)
-                rm -- "$0"; exit
-                ;;
-            8)
-                echo "退出程序。"; break
-                ;;
-            *)
-                echo "无效选项，请重新输入。"
-                ;;
-        esac
-    done
-}
-
-# 初始化脚本
-detect_os
-# 显示主菜单，直到用户选择退出
-main_menu
